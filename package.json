@@ -8,14 +8,16 @@
     "node": ">=24"
   },
   "scripts": {
-    "lint": "tsc --noEmit",
+    "lint": "eslint . && tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "build": "ncc build src/main.ts -o dist --license licenses.txt"
   },
   "devDependencies": {
     "@types/node": "24.19.2",
     "@vercel/ncc": "0.45.0",
+    "eslint": "10.13.0",
     "typescript": "6.0.3",
+    "typescript-eslint": "8.71.2",
     "vitest": "4.1.12"
   }
 }
