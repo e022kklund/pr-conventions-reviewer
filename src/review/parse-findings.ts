@@ -1,4 +1,4 @@
-import type { Finding } from './types';
+import type { Finding } from './types.js';
 
 export type ParseFindingsResult =
   | { ok: true; findings: Finding[]; dropped: number }

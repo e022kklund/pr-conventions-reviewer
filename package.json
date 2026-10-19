@@ -2,6 +2,7 @@
   "name": "pr-conventions-reviewer",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "GitHub Action that reviews pull requests against the repository's own written rules.",
   "main": "dist/index.js",
   "engines": {
@@ -19,5 +20,8 @@
     "typescript": "6.0.3",
     "typescript-eslint": "8.71.2",
     "vitest": "4.1.12"
+  },
+  "dependencies": {
+    "@actions/core": "3.0.1"
   }
 }

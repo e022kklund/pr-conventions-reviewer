@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ConfigError, GitHubError, LlmError, ReviewerError } from './errors';
+import { ConfigError, GitHubError, LlmError, ReviewerError } from './errors.js';
 
 describe('error types', () => {
   it.each([

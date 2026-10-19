@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ConfigError } from '../errors';
-import { DEFAULT_MODEL, DEFAULT_RULES_PATH, parseConfig } from './config';
+import { ConfigError } from '../errors.js';
+import { DEFAULT_MODEL, DEFAULT_RULES_PATH, parseConfig } from './config.js';
 
 const required = {
   'anthropic-api-key': 'sk-ant-secret',

@@ -1,0 +1,24 @@
+name: PR Conventions Reviewer
+description: Reviews pull requests against the repository's own written rules and posts the findings as a review.
+
+inputs:
+  anthropic-api-key:
+    description: Anthropic API key. Store it as a repository secret.
+    required: true
+  github-token:
+    description: Token used to read the pull request and post the review.
+    required: false
+    default: ${{ github.token }}
+  rules-path:
+    description: Path to the rules file in the repository. Defaults to CLAUDE.md.
+    required: false
+  model:
+    description: Claude model to use. Defaults to the model set in src/config/config.ts.
+    required: false
+  fail-on-findings:
+    description: Set to "true" to fail the check when findings are reported. Defaults to "false".
+    required: false
+
+runs:
+  using: node24
+  main: dist/index.js

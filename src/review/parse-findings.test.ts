@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseFindings } from './parse-findings';
+import { parseFindings } from './parse-findings.js';
 
 const valid = {
   path: 'src/main.ts',
