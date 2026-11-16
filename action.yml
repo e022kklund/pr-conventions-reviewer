@@ -18,6 +18,17 @@ inputs:
   fail-on-findings:
     description: Set to "true" to fail the check when findings are reported. Defaults to "false".
     required: false
+  max-diff-chars:
+    description: Largest diff, in characters, that is reviewed. Larger pull requests get a comment instead. Defaults to 100000.
+    required: false
+
+outputs:
+  findings-count:
+    description: Number of findings posted in the review.
+
+branding:
+  icon: check-square
+  color: purple
 
 runs:
   using: node24
