@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ConfigError } from '../errors.js';
-import { DEFAULT_MODEL, DEFAULT_RULES_PATH, parseConfig } from './config.js';
+import {
+  DEFAULT_MAX_DIFF_CHARS,
+  DEFAULT_MAX_OUTPUT_TOKENS,
+  DEFAULT_MODEL,
+  DEFAULT_RULES_PATH,
+  parseConfig,
+} from './config.js';
 
 const required = {
   'anthropic-api-key': 'sk-ant-secret',
@@ -19,6 +25,8 @@ describe('parseConfig', () => {
       rulesPath: DEFAULT_RULES_PATH,
       model: DEFAULT_MODEL,
       failOnFindings: false,
+      maxDiffChars: DEFAULT_MAX_DIFF_CHARS,
+      maxOutputTokens: DEFAULT_MAX_OUTPUT_TOKENS,
     });
   });
 
@@ -29,9 +37,11 @@ describe('parseConfig', () => {
         'rules-path': ' .github/review-rules.md ',
         model: 'some-model',
         'fail-on-findings': 'TRUE',
+        'max-diff-chars': ' 5000 ',
       }),
     );
 
+    expect(config.maxDiffChars).toBe(5000);
     expect(config.rulesPath).toBe('.github/review-rules.md');
     expect(config.model).toBe('some-model');
     expect(config.failOnFindings).toBe(true);
@@ -46,6 +56,12 @@ describe('parseConfig', () => {
 
   it('throws ConfigError for an invalid boolean', () => {
     const values = { ...required, 'fail-on-findings': 'yes' };
+
+    expect(() => parseConfig(inputs(values))).toThrow(ConfigError);
+  });
+
+  it.each(['0', '-1', '1.5', 'many'])('throws ConfigError for max-diff-chars "%s"', (value) => {
+    const values = { ...required, 'max-diff-chars': value };
 
     expect(() => parseConfig(inputs(values))).toThrow(ConfigError);
   });
