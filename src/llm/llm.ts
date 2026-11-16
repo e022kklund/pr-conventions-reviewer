@@ -94,7 +94,10 @@ function describeApiError(error: unknown, model: string): string {
     return 'The Anthropic API rate limit was reached. The review will run again on the next push.';
   }
   if (error instanceof Anthropic.APIError) {
-    return `The Anthropic API returned an error (status ${String(error.status)}).`;
+    // apiMessage and errorCode come from the API's response body, never from our request.
+    const code = error.errorCode ?? error.type;
+    const reason = [code, error.apiMessage].filter((part) => part !== null && part !== '').join(': ');
+    return `The Anthropic API returned an error (status ${String(error.status)})${reason === '' ? '.' : `: ${reason}`}`;
   }
   return 'Could not reach the Anthropic API.';
 }
