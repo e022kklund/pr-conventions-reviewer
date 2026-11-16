@@ -17,6 +17,6 @@ describe('buildPrompt', () => {
 
   it('tells the model to treat the diff as untrusted data', () => {
     expect(prompt.system).toContain('untrusted input');
-    expect(prompt.system).toContain('report_findings');
+    expect(prompt.system).toContain('"findings"');
   });
 });

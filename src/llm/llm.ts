@@ -2,14 +2,11 @@ import Anthropic from '@anthropic-ai/sdk';
 import { LlmError } from '../errors.js';
 import type { ReviewPrompt } from '../review/types.js';
 
-export const TOOL_NAME = 'report_findings';
-
-// The JSON schema the model must follow. Its answer is still validated by
-// review/parse-findings.ts, because the schema is a request, not a guarantee.
-const REPORT_FINDINGS_TOOL: Anthropic.Tool = {
-  name: TOOL_NAME,
-  description: 'Report the rule violations found in the pull request. Use an empty list if there are none.',
-  input_schema: {
+// The JSON schema the model's answer must follow. The API enforces it, but the
+// answer is still validated by review/parse-findings.ts before it is used.
+const FINDINGS_FORMAT: Anthropic.JSONOutputFormat = {
+  type: 'json_schema',
+  schema: {
     type: 'object',
     properties: {
       findings: {
@@ -23,10 +20,12 @@ const REPORT_FINDINGS_TOOL: Anthropic.Tool = {
             message: { type: 'string', description: 'What is wrong and what the rule expects.' },
           },
           required: ['path', 'line', 'rule', 'message'],
+          additionalProperties: false,
         },
       },
     },
     required: ['findings'],
+    additionalProperties: false,
   },
 };
 
@@ -41,8 +40,7 @@ export function createLlmClient(apiKey: string): Anthropic {
 
 /**
  * Asks the model for findings and returns its raw, unvalidated answer.
- * The model is forced to answer through the report_findings tool so the
- * answer is JSON rather than free text.
+ * The answer is requested as JSON that follows FINDINGS_FORMAT.
  */
 export async function requestFindings(
   client: Anthropic,
@@ -56,8 +54,7 @@ export async function requestFindings(
       max_tokens: options.maxOutputTokens,
       system: prompt.system,
       messages: [{ role: 'user', content: prompt.user }],
-      tools: [REPORT_FINDINGS_TOOL],
-      tool_choice: { type: 'tool', name: TOOL_NAME },
+      output_config: { format: FINDINGS_FORMAT },
     });
   } catch (error) {
     throw new LlmError(describeApiError(error, options.model), { cause: error });
@@ -68,17 +65,27 @@ export async function requestFindings(
       `The model ran out of output tokens (${String(options.maxOutputTokens)}) before it finished the review.`,
     );
   }
-
-  const toolUse = message.content.find(
-    (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use' && block.name === TOOL_NAME,
-  );
-  if (!toolUse) {
-    throw new LlmError('The model did not return any findings.');
+  if (message.stop_reason === 'refusal') {
+    throw new LlmError('The model declined to review this pull request.');
   }
 
-  const input: unknown = toolUse.input;
-  return typeof input === 'object' && input !== null && 'findings' in input
-    ? input.findings
+  const text = message.content
+    .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+    .map((block) => block.text)
+    .join('');
+  return findingsFromJson(text);
+}
+
+// Returns the "findings" field of the model's JSON answer, or undefined if there is none.
+function findingsFromJson(text: string): unknown {
+  let answer: unknown;
+  try {
+    answer = JSON.parse(text);
+  } catch {
+    throw new LlmError('The model did not answer with valid JSON.');
+  }
+  return typeof answer === 'object' && answer !== null && 'findings' in answer
+    ? answer.findings
     : undefined;
 }
 
@@ -94,7 +101,10 @@ function describeApiError(error: unknown, model: string): string {
     return 'The Anthropic API rate limit was reached. The review will run again on the next push.';
   }
   if (error instanceof Anthropic.APIError) {
-    return `The Anthropic API returned an error (status ${String(error.status)}).`;
+    // apiMessage and errorCode come from the API's response body, never from our request.
+    const code = error.errorCode ?? error.type;
+    const reason = [code, error.apiMessage].filter((part) => part !== null && part !== '').join(': ');
+    return `The Anthropic API returned an error (status ${String(error.status)})${reason === '' ? '.' : `: ${reason}`}`;
   }
   return 'Could not reach the Anthropic API.';
 }
